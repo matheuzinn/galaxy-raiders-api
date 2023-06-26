@@ -38,8 +38,11 @@ data class SpaceField(val width: Int, val height: Int, val generator: RandomGene
   var asteroids: List<Asteroid> = emptyList()
     private set
 
+  var explosions: List<Explosion> = emptyList()
+    private set
+
   val spaceObjects: List<SpaceObject>
-    get() = listOf(this.ship) + this.missiles + this.asteroids
+    get() = listOf(this.ship) + this.missiles + this.asteroids + this.explosions
 
   fun moveShip() {
     this.ship.move(boundaryX, boundaryY)
@@ -61,15 +64,27 @@ data class SpaceField(val width: Int, val height: Int, val generator: RandomGene
     this.asteroids += this.createAsteroidWithRandomProperties()
   }
 
+  fun generateExplosion(point: Point2D, r: Double) {
+    this.explosions += this.createExplosion(point, r)
+  }
+
   fun trimMissiles() {
     this.missiles = this.missiles.filter {
-      it.inBoundaries(this.boundaryX, this.boundaryY)
+      it.inBoundaries(this.boundaryX, this.boundaryY) &&
+        !it.collided
+    }
+  }
+
+  fun trimExplosions() {
+    this.explosions = this.explosions.filter {
+      it.remainingTime-- > 0
     }
   }
 
   fun trimAsteroids() {
     this.asteroids = this.asteroids.filter {
-      it.inBoundaries(this.boundaryX, this.boundaryY)
+      it.inBoundaries(this.boundaryX, this.boundaryY) &&
+        !it.collided
     }
   }
 
@@ -96,6 +111,7 @@ data class SpaceField(val width: Int, val height: Int, val generator: RandomGene
       initialVelocity = defineMissileVelocity(),
       radius = SpaceFieldConfig.missileRadius,
       mass = SpaceFieldConfig.missileMass,
+      collided = false,
     )
   }
 
@@ -107,12 +123,23 @@ data class SpaceField(val width: Int, val height: Int, val generator: RandomGene
     return Vector2D(dx = 0.0, dy = 1.0)
   }
 
+  private fun createExplosion(point: Point2D, r: Double): Explosion {
+    return Explosion(
+      initialPosition = point,
+      initialVelocity = Vector2D(dx = 0.0, dy = 0.0),
+      radius = r,
+      mass = 0.0,
+      remainingTime = 30
+    )
+  }
+
   private fun createAsteroidWithRandomProperties(): Asteroid {
     return Asteroid(
       initialPosition = generateRandomAsteroidPosition(),
       initialVelocity = generateRandomAsteroidVelocity(),
       radius = generateRandomAsteroidRadius(),
       mass = generateRandomAsteroidMass(),
+      collided = false,
     )
   }
 

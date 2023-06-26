@@ -13,7 +13,8 @@ class AsteroidTest {
     initialPosition = Point2D(1.0, 1.0),
     initialVelocity = Vector2D(1.0, 0.0),
     radius = 1.0,
-    mass = 1.0
+    mass = 1.0,
+    collided = false
   )
 
   @Test

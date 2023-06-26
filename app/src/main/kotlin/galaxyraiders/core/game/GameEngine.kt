@@ -6,6 +6,7 @@ import galaxyraiders.ports.ui.Controller
 import galaxyraiders.ports.ui.Controller.PlayerCommand
 import galaxyraiders.ports.ui.Visualizer
 import kotlin.system.measureTimeMillis
+import galaxyraiders.core.score.ScoreSaver
 
 const val MILLISECONDS_PER_SECOND: Int = 1000
 
@@ -34,6 +35,7 @@ class GameEngine(
   )
 
   var playing = true
+  val scoreSaver = ScoreSaver()
 
   fun execute() {
     while (true) {
@@ -88,6 +90,15 @@ class GameEngine(
     this.field.spaceObjects.forEachPair {
         (first, second) ->
       if (first.impacts(second)) {
+        if (first.type == "Missile" && second.type == "Asteroid") {
+          this.field.generateExplosion(second.center, second.radius)
+          val score = second.mass/second.radius
+          scoreSaver.update(score)
+        } else if (first.type == "Asteroid" && second.type == "Missile") {
+          this.field.generateExplosion(first.center, first.radius)
+          val score = first.mass/first.radius
+          scoreSaver.update(score)
+        }
         first.collideWith(second, GameEngineConfig.coefficientRestitution)
       }
     }
@@ -101,6 +112,7 @@ class GameEngine(
 
   fun trimSpaceObjects() {
     this.field.trimAsteroids()
+    this.field.trimExplosions()
     this.field.trimMissiles()
   }
 
